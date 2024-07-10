@@ -1,4 +1,5 @@
 \import Algebra.Group
+\import Algebra.Group.GSet
 \import Algebra.Group.GSet.Category
 \import Algebra.Group.GSet.GSet
 \import Algebra.Group.Representation.Category

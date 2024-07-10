@@ -1,7 +1,5 @@
 \import Algebra.Group
-\import Algebra.Group.Category
-\import Algebra.Group.GSet.GSet
-\import Algebra.Group.Sub
+\import Algebra.Group.GSet
 \import Algebra.Meta
 \import Algebra.Monoid
 \import Logic
@@ -31,7 +29,7 @@
   conjugate m (n * e * inverse n ) ==< idp >==
   m * (n * e * inverse n ) * inverse m ==< lemma-par >==
   (m * n) * e * (inverse n * inverse m) ==< pmap ((m * n * e) *) (inv G.inverse_*) >==
-  (m * n) * e * (inverse (m * n)) ==< idp >==
+  (m * n) * e * inverse (m * n) ==< idp >==
   conjugate (m * n) e `qed
   | id-action {e : G} : conjugate G.ide e = e => conjugate-via-id e
   \where \lemma lemma-par {a b c d e : G} : a * (b * c * d) * e = (a * b) * c * (d * e) => equation
