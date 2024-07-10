@@ -1,0 +1,86 @@
+\import Algebra.Group
+\import Algebra.Monoid
+\import Data.Bool
+\import Data.List
+\import Function.Meta
+\import Logic
+\import Logic.Meta
+\import Meta
+\import Paths.Meta
+\import Relation.Equivalence
+\import Algebra.Monoid
+
+\func FreeGroup (S : \Set) : Group \cowith
+  | E => Quotient (equivWords.~)
+  | ide => in~ nil
+  | * a b => \case a, b \with {
+    | in~ a, in~ b => in~ (a W.* b)
+    | in~ a, ~-equiv x y r => ~-equiv {_} {equivWords.~} (a * x) (a * y) (equivMulLeft r)
+    | ~-equiv x y r, in~ a => ~-equiv {_} {equivWords.~} (x * a) (y * a) (equivMulRight r)
+  }
+  | ide-left {x} => \case \elim x \with {
+    | in~ a => idp
+  }
+
+  | inverse x => \case \elim x \with {
+    | in~ a => in~ (inv a)
+    | ~-equiv x y r => ~-equiv {_} {equivWords.~} (inv x) (inv y) (equiv_inv r)
+  }
+
+  | inverse-left {x} => \case \elim x \with {
+    | in~ a => ~-equiv {_} {equivWords.~} _ _ (inv_mul {_} {a})
+  }
+
+  | *-assoc {x} {y} {z} => \case \elim x, \elim y, \elim z \with {
+    | in~ a, in~ a1, in~ a2 => ~-equiv {_} {equivWords.~} _ _ (Equivalence.crefl (unfold (*) (rewrite ++-assoc idp)))
+  }
+
+  \where {
+    \func W : Monoid => ListMonoid {\Sigma S Bool}
+
+    \func inv (w : W) : W \elim w
+      | nil => nil
+      | (x, deg) :: l => inv l ++ ((x, not deg) :: nil)
+
+    \func inv_* (x y : W) : inv (x * y) = inv y * inv x
+      | nil, y => rewrite ++_nil idp
+      | (x, p) :: xs, y => rewriteI (++-assoc, inv_*) idp
+
+    \func areAdjacent (w_1 w_2 : W) =>
+      ∃ (u_1 u_2 : W) (x : S) (p : Bool)
+          (\Sigma
+            (w_1 = u_1 W.* u_2)
+            (w_2 = u_1 W.* ((x, p) :: nil) W.* ((x, not p) :: nil) W.* u_2))
+
+    \func equivWords : Equivalence W => Equivalence.Closure.isEquivalence areAdjacent
+
+    \func adjacent_cons {w1 w2 : W} {gen : \Sigma S Bool} (w1~w2 : w1 equivWords.~ w2) : (gen :: w1) equivWords.~ (gen :: w2) \elim w1~w2
+      | Equivalence.cin (inP (u1, u2, y, q, (A0, A1))) => Equivalence.cin (inP ((gen :: nil) W.* u1, u2, y, q, (rewrite A0 idp, rewrite A1 idp)))
+      | Equivalence.crefl p1 => Equivalence.crefl (rewrite p1 idp)
+      | Equivalence.csym c => Equivalence.csym (adjacent_cons c)
+      | Equivalence.ctrans {z} c c1 => Equivalence.ctrans (adjacent_cons c) (adjacent_cons c1)
+
+    \func adjacent_snoc {w1 w2 : W} {gen : \Sigma S Bool} (w1~w2 : w1 equivWords.~ w2) : (w1 ++ (gen :: nil)) equivWords.~ (w2 ++ (gen :: nil)) \elim w1~w2
+      | Equivalence.cin (inP (u1, u2, y, q, (A0, A1))) => Equivalence.cin (inP (u1, u2 ++ (gen :: nil), y, q, (rewrite (A0, ++-assoc) idp, rewrite (A1, ++-assoc) idp)))
+      | Equivalence.crefl p1 => Equivalence.crefl (rewrite p1 idp)
+      | Equivalence.csym c => Equivalence.csym (adjacent_snoc c)
+      | Equivalence.ctrans {z} c c1 => Equivalence.ctrans (adjacent_snoc c) (adjacent_snoc c1)
+
+    \func equivMulRight {a b c : W} (equiv : a equivWords.~ b) : (a W.* c) equivWords.~ (b W.* c) \elim c
+      | nil => repeat {2} (rewrite ide-right) equiv
+      | gen :: cs => repeat {2} (rewrite ++-assoc) in (equivMulRight {S} {a ++ (gen :: nil)} {b ++ (gen :: nil)} {cs}) (adjacent_snoc equiv)
+
+    \func equivMulLeft {a b c : W} (equiv : a equivWords.~ b) : (c W.* a) equivWords.~ (c W.* b) \elim c
+      | nil => repeat {2} (rewrite ide-left) equiv
+      | gen :: cs => (adjacent_cons {S} {cs W.* a} {cs W.* b} {gen}) (equivMulLeft equiv)
+
+     \func equiv_inv {a b : W} (equiv : a equivWords.~ b) : inv a equivWords.~ inv b \elim equiv
+       | Equivalence.cin (inP (u1, u2, y, q, (A0, A1))) => rewrite (A0, A1) ((repeat {4} (rewrite inv_*)) (rewrite not-isInv (Equivalence.cin (inP (inv u2, inv u1, y, q, (idp, repeat {2} (rewrite *-assoc) idp))))))
+       | Equivalence.crefl p => Equivalence.crefl (rewrite p idp)
+       | Equivalence.csym c => Equivalence.csym (equiv_inv c)
+       | Equivalence.ctrans c c1 => Equivalence.ctrans (equiv_inv c) (equiv_inv c1)
+
+     \func inv_mul {a : W} : inv a W.* a equivWords.~ nil \elim a
+       | nil => Equivalence.crefl idp
+       | a :: l => Equivalence.~-transitive {_} {_} {inv l W.* l} (Equivalence.csym (Equivalence.cin (inP (inv l, l, a.1, not a.2, (idp, rewrite not-isInv (repeat {3} (rewrite ++-assoc) idp)))))) (inv_mul {_} {l})
+  }
