@@ -1,11 +1,19 @@
+\import Algebra.Field
 \import Algebra.Group
 \import Algebra.Group.Category
 \import Algebra.Group.Representation.Category
+\import Algebra.Group.Representation.MaschkeTheorem
+\import Algebra.Group.Representation.Product
 \import Algebra.Group.Representation.Representation
+\import Algebra.Group.Representation.SumOverGroup
+\import Algebra.Module
 \import Algebra.Module.Category
+\import Algebra.Module.LinearMap
 \import Algebra.Ring
+\import Category
 \import Function
 \import Logic
+\import Logic.Meta
 \import Paths
 \import Paths.Meta
 
@@ -14,9 +22,21 @@
   | in-mono : isInj in
 
   \func isTrivial => isZeroMod S || isSurj in
+
+
+  \func directSummand => ∃(K : SubLRepres E)(Iso (ProductLRepres.coprod-map in K.in))
+
+  \func \infix 7 ap (g : G)(s : S) : S => (LinRepres.** {S}) g s
+
+
+  -- TODO : rewrite it with extension
+  \func recast : SubLModule_external E \cowith
+    | S => S
+    | in => in
+    | in-mono => in-mono
 }
 
-\func KernelSubLRepres{R : Ring} {G : Group} {A B : LRepres R G} (f : InterwiningMap A B) : SubLRepres A \cowith
+\func KernelSubLRepres{R : Ring}{G : Group}{A B : LRepres R G}(f : InterwiningMap A B) : SubLRepres A \cowith
   | S => KerLRepres f
   | in => KerLRepresHom f
   | in-mono {a a' : KerLRepres f} => \lam (p : KerLRepresHom f a = KerLRepresHom f a') => exts p

@@ -1,0 +1,56 @@
+\import Algebra.Group
+\import Algebra.Ring
+\import Algebra.Semiring
+\import Category
+\import Category.Limit
+\import Category.Monoidal
+\import Equiv (QEquiv)
+\import Equiv.Univalence (Equiv-to-=, QEquiv-to-=)
+\import Operations
+\import Paths
+\import Paths.Meta
+
+-- TODO : make an instance of  closed symmetric monoidal precategory
+-- TODO : prove lemmas of everything
+
+\class PreAdditivePrecat \extends Precat{
+  | AbHom {X Y : Ob} : AbGroup(Hom X Y)
+  | l-bilinear {X Y Z : Ob}{g h : Hom X Y}{f : Hom Y Z} : (g AbHom.+ h) >> f = g >> f AbHom.+  h >> f
+  | r-bilinear {X Y Z : Ob}{g h : Hom Y Z}{f : Hom X Y} : f >> (g AbHom.+ h) = f >> g AbHom.+  f >> h
+}
+
+
+\func Ring=OneObjectPreAdd : PreAdditivePrecat (\Sigma) = Ring => QEquiv-to-= \new QEquiv {
+  | f => PreAdditiveCategory-OneObject
+  | ret => Ring_toCat
+  | ret_f _ => idp
+  | f_sec _ => exts ((idp, idp, \lam _ _  => idp, idp, \lam _ _ => idp, \lam n => {?}, \lam _ => idp))
+}
+  \where {
+
+
+    {- | PreAdditiveCategory with one object is a ring -}
+    \func PreAdditiveCategory-OneObject (X : PreAdditivePrecat (\Sigma)) : Ring (X.Hom () ()) \cowith
+      | AbGroup => X.AbHom {()}{()}
+      | ide => X.id ()
+      | * => X.∘
+      | ide-left => X.id-left
+      | ide-right => X.id-right
+      | *-assoc => X.o-assoc
+      | ldistr => X.l-bilinear
+      | rdistr => X.r-bilinear
+    \func test => transport
+
+    \func Ring_toCat (R : Ring) : PreAdditivePrecat (\Sigma) \cowith
+      | Hom () () => R
+      | id () => R.ide
+      | o => R.*
+      | id-left => R.ide-left
+      | id-right => R.ide-right
+      | o-assoc => R.*-assoc
+      | AbHom => R
+      | l-bilinear => R.ldistr
+      | r-bilinear => R.rdistr
+  }
+
+\class AdditivePrecat \extends PreAdditivePrecat, CartesianPrecat

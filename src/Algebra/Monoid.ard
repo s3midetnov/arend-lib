@@ -433,6 +433,32 @@
   \default zro-left => +-comm *> zro-right
   \default zro-right => +-comm *> zro-left
 
+  \func \infix 10 mul (n : Nat) (a : E) : E  => iterr ( + a) n zro
+    \where {
+      \func zero-ap {a : E} : zero mul a = 0 => idp
+
+      \func one-ap (a : E) : 1 mul a = a => zro-right
+
+      \func suc-ap {n : Nat} {a : E} : (suc n) mul a = n mul a + a => rewrite +-comm idp
+
+      \func ap-zero (n : Nat) : n mul 0 = 0 \elim n
+        | 0 => zero-ap {_} {0}
+        | suc n1 => rewrite (suc-ap {_} {n1} {0}, ap-zero n1, zro-right) idp
+    }
+
+  \func mul-ldistr{n : Nat} {a b : E} : n mul (a + b) = n mul a + n mul b \elim n
+    | 0 => rewrite (mul.zero-ap, mul.zero-ap, mul.zero-ap, zro-right) idp
+    | suc n => rewrite (mul.suc-ap, mul.suc-ap, mul.suc-ap, +-comm {\this} {n mul a} {a}, mul-ldistr {_} {n}) equation -- , inv $ mul-ldistr {_} {n} {a} {b}
+
+  \func mul-rdistr {n m : Nat}{a : E} : (n Nat.+ m) mul a = n mul a + m mul a \elim n
+    | 0 => rewrite (mul.zero-ap, zro-left) idp
+    | suc n => rewrite (mul.suc-ap, mul-rdistr {_} {n}, +-comm, inv +-assoc, +-comm {_} {a} {n mul a}, inv mul.suc-ap) idp
+
+  \func mul-*assoc {n m : Nat}(a : E) : n mul (m mul a) = (n * m) mul a \elim m
+    | 0 => rewrite (mul.zero-ap, mul.ap-zero n) idp
+    | suc m => rewrite (mul.suc-ap, mul-ldistr, NatSemiring.+-comm, mul-rdistr, +-comm, mul-*assoc) idp
+
+
   \lemma BigSum_+ {n : Nat} {l l' : Array E n} : BigSum (\lam i => l i + l' i) = BigSum l + BigSum l' \elim n, l, l'
     | 0, _, _ => inv zro-left
     | suc n, :: a l, :: a' l' => unfold BigSum (rewrite (BigSum_+ {_} {n} {l}) equation)

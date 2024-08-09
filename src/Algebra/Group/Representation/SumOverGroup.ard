@@ -1,0 +1,115 @@
+\import Algebra.Group
+\import Algebra.Group.Representation.Category
+\import Algebra.Group.Representation.Representation
+\import Algebra.Group.Representation.Sub
+\import Algebra.Module
+\import Algebra.Module.Category
+\import Algebra.Module.LinearMap
+\import Algebra.Monoid
+\import Algebra.Ring
+\import Category.Enriched
+\import Equiv
+\import Function
+\import Function.Meta
+\import Logic
+\import Logic.Meta
+\import Meta
+\import Paths
+\import Paths.Meta
+\import Set.Fin
+
+\func SumOverGroup{G : FinGroup}{R : CRing} {A B : LRepres R G}(f : LinearMap A B) : InterwiningMap A B \cowith
+  | LinearMap => int
+  | func-** {a} {h} => rewrite (bring_h_out h a, inv $ ap-rearrange h a) idp
+  \where {
+    \func Ab : AbGroup => PreAdditivePrecat.AbHom {LModulePreAdditive R} {A} {B}
+
+    \func adjust(g : G) (f : LinearMap A B) : LinearMap A B \cowith
+      | func a => g B.** f ( inverse g A.** a)
+      | func-+ => rewrite (A.lin, f.func-+, B.lin) idp
+      | func-*c => rewrite (A.lin-*c, f.func-*c, B.lin-*c) idp
+
+    \func adjust' : G -> LinearMap A B => \lam g => adjust g f
+
+    \func int : LinearMap A B => Ab.FinSum (\lam (g : G) => adjust g f)
+
+    \func group_prop (g h : G)(a : A) : adjust g f (h A.** a) = h B.** (adjust ((inverse h) * g) f a)
+      => unfold (inv (rewrite (B.**-assoc, inv G.*-assoc, G.inverse-right, G.ide-left, G.inverse_*, G.inverse-isInv, A.**-assoc) idp))
+
+    \func FinSumToBigSumGeneral (X : AbMonoid){E : FinSet}(e : E -> X) : \Sigma (f : Fin E.finCard -> X)(X.FinSum e = X.BigSum f) =>
+      (\lam z => {?}, {?})
+
+    \func FinSumToBigSum (r : G -> B) : \Sigma (f : Fin G.finCard -> B)(B.FinSum r = B.BigSum f) => {?}
+    \func FinSumToBigSumAb (r : G -> Ab) : \Sigma (f : Fin G.finCard -> Ab)(Ab.FinSum r = Ab.BigSum f) => {?}
+
+    \func FinSum-equivariance (h : G) {x : G -> B} : h B.** (B.FinSum x) = B.FinSum (\lam z => h B.** (x z))
+      => rewrite ((FinSumToBigSum x).2, (FinSumToBigSum (\lam z => h B.** (x z))).2) (BigSum-equivariance (FinSumToBigSum x).1)
+    \where {
+      \func act_array (h : G)(e : Array B) : Array B => \lam i => h B.** (e i)
+
+      \func act_empty_array{h : G} : act_array h nil = nil => idp
+
+      \func act_larger_array {h : G}{a : B}{l : Array B} : act_array h (a :: l) = (h B.** a) :: (act_array h l) => idp
+
+      \func unfold_bigsum {a : B} {l : Array B} : h B.** B.BigSum (a :: l) = h B.** (a + (B.BigSum l)) => idp
+
+      \func BigSum-equivariance (e : Array B) : h B.** (B.BigSum e) = B.BigSum (act_array h e) \elim e
+        | nil => rewrite (act_empty_array, B.g**-zro) idp
+        | a :: l => rewrite (act_larger_array, unfold_bigsum {_}{_}{_}{_}{a}{l}, B.lin, BigSum-equivariance l) idp
+
+    }
+
+    \func FinSumEquality {E : AbMonoid} {A : FinSet} {x y : A -> E} (eq : \Pi (a : A) -> x a = y a)
+      : E.FinSum x = E.FinSum y => {?}
+    \where {
+
+    }
+
+    \func FinSumRewrite (x : G -> Ab) (a : A) :
+      (Ab.FinSum x) a = B.FinSum (\lam e => (x e) a) => rewrite ((FinSumToBigSumAb x).2, (FinSumToBigSum (\lam e => (x e) a)).2, BigSumRewrite (FinSumToBigSumAb x).1) idp
+    \where {
+      \func Ab_Helper {f g : Ab}{x : A} : (f + g) x = (f x) + g x => idp
+
+      \func ap_BigSum_el_wise (e : Array Ab)(a : A) : Array B => \lam i => (e i) a
+
+      \func ap_BigSum_el_wise_nil (a : A) : ap_BigSum_el_wise nil a = nil => idp
+
+      \func ap_BigSum_el_wise_cons {a : A} {ab : Ab} {l : Array Ab} : ap_BigSum_el_wise (ab :: l) a = (ab a) :: (ap_BigSum_el_wise l a) => idp
+
+      \func BigSumRewrite (e : Array Ab)(a : A) : (Ab.BigSum e) a = B.BigSum (ap_BigSum_el_wise e a) \elim e
+        | nil => rewrite (ap_BigSum_el_wise_nil a) idp
+        | a1 :: l => rewrite (ap_BigSum_el_wise_cons, Ab_Helper, BigSumRewrite l a) idp
+    }
+
+    \lemma PermutationInvariance {E : AbMonoid}{A : FinSet}
+                                 (x : A -> E)(p : A -> A)(permute : QEquiv p): E.FinSum x  = E.FinSum (x o p)
+      => E.FinSum_Equiv {A}{A} permute
+
+    \lemma rearrange(h : G) :
+      int = (Ab.FinSum (\lam (g : G) => adjust ((inverse h) * g) f))
+      => PermutationInvariance {Ab} adjust' ((inverse h) *) (Group.translate-is-Equiv (inverse h))
+
+    \func ap-rearrange (h : G)(a : A) :
+      int a = (Ab.FinSum (\lam (g : G) => adjust ((inverse h) * g) f)) a => path (\lam i => ((rearrange h) i) a)
+
+    \func bring_h_out (h : G) (a : A) : int (h A.** a)
+      = h B.** (Ab.FinSum (\lam (g : G) => adjust ((inverse h) * g) f)) a
+      => inv $ rewrite (zero-2-step h a, FinSum-equivariance, step-4 h a, inv $ FinSumRewrite (\lam (g : G) => adjust g f) (h A.** a)) idp
+      \where {
+        \func zero-2-step(h : G)(a : A) :
+          (Ab.FinSum (\lam g => adjust (G.inverse h G.* g) f) )a = B.FinSum (\lam g => adjust (G.inverse h G.* g) f a) => FinSumRewrite (\lam g => adjust (G.inverse h G.* g) f) a
+
+        \func step-4 (h : G)(a : A) :
+          B.FinSum (\lam (g : G) => h B.**(adjust ((inverse h) * g) f) a) =
+          B.FinSum(\lam (g : G) => g B.** (f (inverse g A.** (h A.** a)))) => rewrite (FinSumEquality helper) idp
+          \where {
+            \func helper {h : G}{a : A}(g : G) : h B.**(adjust ((inverse h) * g) f) a = g B.** (f (inverse g A.** (h A.** a)))
+              => unfold (rewrite (G.inverse_*, G.inverse-isInv, inv A.**-assoc, B.**-assoc, inv G.*-assoc, G.inverse-right, G.ide-left) idp)
+          }
+
+      }
+
+    \func unfold_definition{G : FinGroup}{R : CRing}{A : LRepres R G}{B : SubLRepres A}
+                           {f : LinearMap A B}(q : \Pi(b : B) -> f (B.in b) = b)(b : B) : SumOverGroup f (B.in b) = AbMonoid.FinSum {B}
+        (\lam (g : G) => g B.ap f (inverse {G} g A.** B.in b)) => {?}
+  }

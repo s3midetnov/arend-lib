@@ -1,11 +1,18 @@
+\import Algebra.Group
 \import Algebra.Group.Category
+\import Algebra.Meta
 \import Algebra.Module
 \import Algebra.Module.LinearMap
 \import Algebra.Monoid.Category
 \import Algebra.Ring
 \import Algebra.Ring.RingHom
+\import Arith.Int
 \import Category
+\import Category.Enriched
 \import Category.Meta
+\import Equiv (QEquiv)
+\import Equiv.Univalence (QEquiv-to-=)
+\import Function.Meta
 \import Logic
 \import Paths
 \import Paths.Meta
@@ -60,6 +67,85 @@
 \func ImageLModuleRightHom {R : Ring} {A B : LModule R} (f : LinearMap A B) : LinearMap (ImageLModule f) f.Cod \cowith
   | AddGroupHom => ImageAddGroupRightHom f
   | func-*c => idp
+
+
+\instance LModulePreAdditive (R : Ring) : PreAdditivePrecat{| Precat => LModuleCat R} \cowith
+  | AbHom => \new AbGroup {
+    | zro => zeroMap
+    | + => addMaps
+    | zro-left => exts \lam _ => LModule.zro-left
+    | zro-right => exts \lam _ => LModule.zro-right
+    | +-assoc => exts \lam _ => LModule.+-assoc
+    | negative => negativeMap
+    | negative-left => exts \lam _ => LModule.negative-left
+    | +-comm => exts \lam _ => LModule.+-comm
+  }
+  | l-bilinear => exts \lam _ => LinearMap.func-+
+  | r-bilinear => exts \lam _ => idp
+  \where {
+    \func zeroMap {M N : LModule R} : LinearMap M N \cowith
+      | func _ => N.zro
+      | func-+ => inv N.zro-right
+      | func-*c => inv N.*c_zro-right
+    \func addMaps {M N : LModule R} (f g : LinearMap M N)  : LinearMap M N \cowith
+      | func m => f m N.+ g m
+      | func-+ => rewrite (f.func-+, g.func-+) equation
+      | func-*c => rewrite (f.func-*c, g.func-*c, N.*c-ldistr) idp
+
+    \func negativeMap{M N : LModule R}(f : LinearMap M N) : LinearMap M N \cowith
+      | func m => negative (f m)
+      | func-+ => rewrite (f.func-+, inv N.neg_ide_*c, inv N.neg_ide_*c, inv N.neg_ide_*c, N.*c-ldistr) idp
+      | func-*c => rewrite (f.func-*c, inv N.neg_ide_*c, inv N.neg_ide_*c, inv N.*c-assoc, inv N.*c-assoc, R.negative_ide-right, R.negative_ide-left) idp
+  }
+
+\instance LinearMapLModule {R : CRing}(A B : LModule R) : LModule R \cowith
+  | AbGroup => AbHom {LModulePreAdditive R}{A} {B}
+  | *c => MultiplyBy_const
+  | *c-assoc => exts \lam _ => B.*c-assoc
+  | *c-ldistr => exts \lam _ => B.*c-ldistr
+  | *c-rdistr => exts \lam _ => B.*c-rdistr
+  | ide_*c => exts \lam _ => B.ide_*c
+  \where {
+    \func MultiplyBy_const (c : R)(f : LinearMap A B) : LinearMap A B \cowith
+      | func a => c B.*c (f a)
+      | func-+ => rewrite (f.func-+, B.*c-ldistr) idp
+      | func-*c => rewrite (f.func-*c, inv B.*c-assoc, inv B.*c-assoc, R.*-comm) idp
+  }
+
+\func AbGroup=Z-Mod : AbGroup = LModule IntRing => QEquiv-to-= \new QEquiv {
+  | f A => \new LModule IntRing {
+    | AbGroup => A
+    | *c => AddGroup.mul-int
+    | *c-assoc => inv AddGroup.mul-int-assoc
+    | *c-ldistr => AddGroup.mul-int-ldistr
+    | *c-rdistr => AddGroup.mul-int-rdistr
+    | ide_*c => AddGroup.zro-right
+  }
+  | ret X => X
+  | ret_f _ => exts (idp, idp, \lam _ _ => idp, \lam _ => idp)
+  | f_sec _ => exts (idp, idp, \lam _ _ => idp, \lam _ => idp, \lam _ _ => {?})
+}
+  \where {
+--    \func aux {X : LModule IntRing}{A : Int}{B : X} : A AddGroup.mul-int B = A *c B \elim  A
+--      | pos n => auxPos
+--      | neg (suc n) => auxNeg
+--
+--    \func auxPos{X : LModule IntRing}{A : Nat}{B : X} : (pos A)AddGroup.mul-int B = (pos A) *c B => inv $ helper A
+--
+--    \func auxNeg{X : LModule IntRing}{n : Nat}{B : X} : (neg (suc n))AddGroup.mul-int B = (neg (suc n)) *c B
+--      => rewrite (helper' {X} {B} {n}, inv X.neg_ide_*c, auxPos {X} {suc n}{B}, X.neg_ide_*c, inv X.*c_negative-left) idp
+--
+--    \func aux'' {X : LModule IntRing}{n1 : Nat}{B : X} : pos (suc n1) X.*c B = ((pos n1) *c B) + ((pos 1) *c B) =>
+--      pos (suc n1) X.*c B ==< pmap (\lam z => z X.*c B) idp >==
+--      ((pos n1) IntRing.+ (pos 1)) X.*c B ==< X.*c-rdistr
+--
+--    \func helper{X : LModule IntRing}{A : X}(n : Nat) : (pos n) *c A = (pos n) AddGroup.mul-int A \elim n
+--      | 0 => X.*c_zro-left
+--      | suc n => rewrite (aux'', helper n, X.ide_*c) idp
+--    \func helper' {X : LModule IntRing}{B : X}{n : Nat} : neg (suc n) *c B = negative (pos (suc n)) *c B => idp
+  }
+
+
 
 \instance LinearMapRing {R : Ring} (U : LModule R) : Ring (LinearMap U U)
   | zro => linearMap_zro

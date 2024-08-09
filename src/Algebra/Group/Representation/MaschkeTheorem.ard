@@ -1,0 +1,96 @@
+\import Algebra.Field
+\import Algebra.Group
+\import Algebra.Group.GSet
+\import Algebra.Group.Representation.Category
+\import Algebra.Group.Representation.Representation
+\import Algebra.Group.Representation.Sub
+\import Algebra.Group.Representation.SumOverGroup
+\import Algebra.Module
+\import Algebra.Module.Category
+\import Algebra.Module.LinearMap
+\import Algebra.Module.Sub
+\import Algebra.Monoid
+\import Algebra.Ring
+\import Algebra.Semiring
+\import Category
+\import Function
+\import Function.Meta
+\import Logic
+\import Logic.Meta
+\import Meta (unfold)
+\import Paths
+\import Paths.Meta
+\import Set.Fin
+
+\class SubLModule_external{R : Ring} (E : LModule R) (\classifying S : LModule R){
+  | in : LinearMap S E
+  | in-mono : isInj in
+
+  \func directSummand => ∃ (K : SubLModule_external E) (Iso {LModuleCat R} (ProductLModule.coprod-map in K.in))
+}
+\where {
+  \func toSubLModule' {R : Ring} {E : LModule R} (S : SubLModule R E) : SubLModule_external E \cowith
+    | S => S.struct
+    | in => S.in
+    | in-mono => \lam p => exts p
+
+  \func directSummand<->retract {R : Ring}{E : LModule R}{S : SubLModule_external E} :
+    \Sigma (S.directSummand -> SplitMono S.in)(SplitMono S.in -> S.directSummand) => {?}
+
+}
+
+\class Maschke'sTheorem{R : CRing}{G : FinGroup}{|G|^-1 : R}(q : R.natCoef G.finCard R.* |G|^-1 = R.ide){
+
+  \func mean_func {E W : LRepres R G}(f : LinearMap E W):
+    InterwiningMap E W => LModule.*c |G|^-1 (SumOverGroup f)
+
+  \func mean-func-preserve (E : LRepres R G){S : SubLRepres E}
+                           {f : LinearMap E S}(p : \Pi(s : S) -> f (S.in s) = s)(t : S)
+    : mean_func f (S.in t) = t
+    => unfold (rewrite (SumOverGroup-multiply, inv $ LModule.*c-assoc {S.S}, R.*-comm, q, ide_*c) idp)
+      \where {
+        \func \infix 7 ap (g : G)(s : S) : S => (LinRepres.** {S}) g s
+
+        \func SumOverGroup-multiply : SumOverGroup f (S.in t) = R.natCoef G.finCard *c t
+          => rewrite (SumOverGroup-sameEls, FinSumEqual t) idp
+
+        \func FinSumEqual {E : LModule R}{A : FinSet}(e : E) : E.FinSum (\lam (a : A) => e) = R.natCoef A.finCard *c e => {?}
+        \where {
+          \func BigSumEqual{l : Array E}{e : E}(p : \Pi(i : Fin l.len) -> l i = e) : E.BigSum l = R.natCoef l.len *c e => {?}
+
+          \func xBigSumEqual{l : Array E}{a : E} : E.BigSum (a :: l) = a + E.BigSum (l) => idp
+
+          \func BigSumHelper {l l' : Array E}{a : E}(p : \Pi(i : Fin l.len) -> l i = e) {q : l = a :: l'} : \Pi (j : Fin l'.len)-> l' j = e => {?}
+
+        }
+
+        \func SumOverGroup-sameEls :
+          SumOverGroup f (S.in t) = AbMonoid.FinSum {S} (\lam (z : G) => t)
+          => rewrite (SumOverGroup_Sub'', SumOverGroup.FinSumEquality (\lam (g : G) => SumOverGroup_SubRepr_Property g t)) idp
+
+        \func SumOverGroup_Sub'' :  SumOverGroup f (S.in t) = AbMonoid.FinSum {S}
+        (\lam (g : G) => g ** f (inverse {G} g E.** S.in t)) => SumOverGroup.unfold_definition {G} {R} {E} p t
+
+        \func SumOverGroup_SubRepr_Property (g : G)(t : S) : g ap f (inverse g E.** (S.in t)) = t
+          => rewrite (inv $ InterwiningMap.func-** {S.in}, p (inverse g ap t), **-assoc, G.inverse-right, id-action) idp
+
+      }
+
+  \func Maschke's-Theorem {E : LRepres R G}(S : SubLRepres E)(p : SubLModule_external.directSummand {S.recast}) : S.directSummand
+    => {?}
+    \where {
+--      \func lin-in : LinearMap S.recast E => SubLModule_external.in {S.recast}
+
+--      \func extract_retraction : SplitMono {LModuleCat R} (SubLModule_external.in {S.recast}) => {?} -- SubLModule_external.directSummand<->retract.1 p
+    }
+
+--  \func anotherStatement {E : LRepres R G}(S : SubLRepres E)(p : SplitMono {LModuleCat R} S.in) : SplitMono {RepresentationCat R G} S.in \cowith
+--    | hinv => mean_func p.hinv
+--    | hinv_f => exts (\lam e => mean-func-preserve E e ap_hinv_f)
+--    \where {
+--          \func ap_hinv_f {s : S} : p.hinv (S.in s) = s => path (\lam i => p.hinv_f i s )
+--        }
+
+  --  \func Summand (E  : LRepres R G)(S : SubLRepres E) : S.directSummand => {?}
+
+}
