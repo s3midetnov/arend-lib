@@ -44,7 +44,7 @@
   \func mean_func {E W : LRepres R G}(f : LinearMap E W):
     InterwiningMap E W => LModule.*c |G|^-1 (SumOverGroup f)
 
-  \func mean-func-preserve (E : LRepres R G){S : SubLRepres E}
+  \func mean-func-preserve {E : LRepres R G}{S : SubLRepres E}
                            {f : LinearMap E S}(p : \Pi(s : S) -> f (S.in s) = s)(t : S)
     : mean_func f (S.in t) = t
     => unfold (rewrite (SumOverGroup-multiply, inv $ LModule.*c-assoc {S.S}, R.*-comm, q, ide_*c) idp)
@@ -54,14 +54,13 @@
         \func SumOverGroup-multiply : SumOverGroup f (S.in t) = R.natCoef G.finCard *c t
           => rewrite (SumOverGroup-sameEls, FinSumEqual t) idp
 
-        \func FinSumEqual {E : LModule R}{A : FinSet}(e : E) : E.FinSum (\lam (a : A) => e) = R.natCoef A.finCard *c e => {?}
-        \where {
-          \func BigSumEqual{l : Array E}{e : E}(p : \Pi(i : Fin l.len) -> l i = e) : E.BigSum l = R.natCoef l.len *c e => {?}
-
-          \func xBigSumEqual{l : Array E}{a : E} : E.BigSum (a :: l) = a + E.BigSum (l) => idp
-
-          \func BigSumHelper {l l' : Array E}{a : E}(p : \Pi(i : Fin l.len) -> l i = e) {q : l = a :: l'} : \Pi (j : Fin l'.len)-> l' j = e => {?}
-
+        \func FinSumEqual {E : LModule R}{A : FinSet}(e : E) : E.FinSum (\lam (a : A) => e) = R.natCoef A.finCard *c e => \case E.FinSum_char (\lam (a : A) => e) \with {
+          | inP a => rewrite (a.2, BigSumEqual A.finCard) idp
+        }
+          \where {
+          \func BigSumEqual (n : Nat) : AddMonoid.BigSum (\new Array E n (\lam _ => e)) = R.natCoef n *c e \elim n
+            | 0 => rewrite (R.natCoefZero, E.*c_zro-left) idp
+            | suc n => rewrite (R.natCoefSuc n, E.*c-rdistr, inv $ BigSumEqual n, E.ide_*c, E.+-comm) idp
         }
 
         \func SumOverGroup-sameEls :
@@ -71,25 +70,28 @@
         \func SumOverGroup_Sub'' :  SumOverGroup f (S.in t) = AbMonoid.FinSum {S}
         (\lam (g : G) => g ** f (inverse {G} g E.** S.in t)) => SumOverGroup.unfold_definition {G} {R} {E} p t
 
-        \func SumOverGroup_SubRepr_Property (g : G)(t : S) : g ap f (inverse g E.** (S.in t)) = t
+        \func SumOverGroup_SubRepr_Property (g : G)(t : S) : g ap f (inverse g E.** S.in t) = t
           => rewrite (inv $ InterwiningMap.func-** {S.in}, p (inverse g ap t), **-assoc, G.inverse-right, id-action) idp
 
       }
 
-  \func Maschke's-Theorem {E : LRepres R G}(S : SubLRepres E)(p : SubLModule_external.directSummand {S.recast}) : S.directSummand
-    => {?}
+  \func Maschke's-Theorem {E : LRepres R G}(S : SubLRepres E)
+                          (p : SubLModule_external.directSummand {S.recast}) : S.directSummand
+    => inP ({?}, {?})
     \where {
 --      \func lin-in : LinearMap S.recast E => SubLModule_external.in {S.recast}
 
 --      \func extract_retraction : SplitMono {LModuleCat R} (SubLModule_external.in {S.recast}) => {?} -- SubLModule_external.directSummand<->retract.1 p
     }
 
---  \func anotherStatement {E : LRepres R G}(S : SubLRepres E)(p : SplitMono {LModuleCat R} S.in) : SplitMono {RepresentationCat R G} S.in \cowith
---    | hinv => mean_func p.hinv
---    | hinv_f => exts (\lam e => mean-func-preserve E e ap_hinv_f)
---    \where {
---          \func ap_hinv_f {s : S} : p.hinv (S.in s) = s => path (\lam i => p.hinv_f i s )
---        }
+  \func anotherStatement {E : LRepres R G}(S : SubLRepres E)(p : SplitMono {LModuleCat R} S.in) : SplitMono {RepresentationCat R G} S.in \cowith
+    | hinv => mean_func p.hinv
+    | hinv_f => exts (\lam e => rewrite (mean-func-preserve {_}{E} (splitMono-meaining p) e) idp) -- mean-func-preserve (splitMono-meaining p) e)
+    \where {
+          \func splitMono-meaining (p : SplitMono {LModuleCat R} S.in) : \Pi (s : S) -> p.hinv (S.in s) = s => {?}
+
+          \func ap_hinv_f {s : S} : p.hinv (S.in s) = s => path (\lam i => p.hinv_f i s )
+        }
 
   --  \func Summand (E  : LRepres R G)(S : SubLRepres E) : S.directSummand => {?}
 

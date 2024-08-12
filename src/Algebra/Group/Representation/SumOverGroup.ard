@@ -8,6 +8,7 @@
 \import Algebra.Monoid
 \import Algebra.Ring
 \import Category.Enriched
+\import Data.Array
 \import Equiv
 \import Function
 \import Function.Meta
@@ -36,49 +37,51 @@
     \func group_prop (g h : G)(a : A) : adjust g f (h A.** a) = h B.** (adjust ((inverse h) * g) f a)
       => unfold (inv (rewrite (B.**-assoc, inv G.*-assoc, G.inverse-right, G.ide-left, G.inverse_*, G.inverse-isInv, A.**-assoc) idp))
 
-    \func FinSumToBigSumGeneral (X : AbMonoid){E : FinSet}(e : E -> X) : \Sigma (f : Fin E.finCard -> X)(X.FinSum e = X.BigSum f) =>
-      (\lam z => {?}, {?})
 
-    \func FinSumToBigSum (r : G -> B) : \Sigma (f : Fin G.finCard -> B)(B.FinSum r = B.BigSum f) => {?}
-    \func FinSumToBigSumAb (r : G -> Ab) : \Sigma (f : Fin G.finCard -> Ab)(Ab.FinSum r = Ab.BigSum f) => {?}
-
+    -- \lemma FinSum_char {A : FinSet} (x : A -> E) :
+    -- ∃ (e : Equiv {Fin A.finCard} {A}) (FinSum x = BigSum (\lam j => x (e j))) =>
     \func FinSum-equivariance (h : G) {x : G -> B} : h B.** (B.FinSum x) = B.FinSum (\lam z => h B.** (x z))
-      => rewrite ((FinSumToBigSum x).2, (FinSumToBigSum (\lam z => h B.** (x z))).2) (BigSum-equivariance (FinSumToBigSum x).1)
-    \where {
-      \func act_array (h : G)(e : Array B) : Array B => \lam i => h B.** (e i)
+      => \case B.FinSum_char x  \with {
+      | inP p => \case B.FinSum_char2 (\lam z => h B.** (x z)) p.1 \with {
+        | q => rewrite (p.2, q, BigSum-equivariance) idp
+      }
+      }
+      \where {
+        \func act_array (h : G)(e : Array B) : Array B => \lam i => h B.** (e i)
 
-      \func act_empty_array{h : G} : act_array h nil = nil => idp
-
-      \func act_larger_array {h : G}{a : B}{l : Array B} : act_array h (a :: l) = (h B.** a) :: (act_array h l) => idp
-
-      \func unfold_bigsum {a : B} {l : Array B} : h B.** B.BigSum (a :: l) = h B.** (a + (B.BigSum l)) => idp
-
-      \func BigSum-equivariance (e : Array B) : h B.** (B.BigSum e) = B.BigSum (act_array h e) \elim e
-        | nil => rewrite (act_empty_array, B.g**-zro) idp
-        | a :: l => rewrite (act_larger_array, unfold_bigsum {_}{_}{_}{_}{a}{l}, B.lin, BigSum-equivariance l) idp
-
-    }
+        \func BigSum-equivariance (e : Array B) : h B.** (B.BigSum e) = B.BigSum (act_array h e) \elim e
+          | nil => rewrite B.g**-zro idp
+          | a :: l => rewrite (B.lin, BigSum-equivariance l) idp
+        }
 
     \func FinSumEquality {E : AbMonoid} {A : FinSet} {x y : A -> E} (eq : \Pi (a : A) -> x a = y a)
-      : E.FinSum x = E.FinSum y => {?}
-    \where {
-
+      : E.FinSum x = E.FinSum y => \case E.FinSum_char x \with {
+      | inP a => \case E.FinSum_char2 y a.1 \with {
+        | p => rewrite (a.2, p, BigSumEquality) idp
+      }
+    }\where {
+      \func BigSumEquality {a : Equiv {Fin A.finCard} {A}}
+        : AddMonoid.BigSum (\new Array E A.finCard (\lam j => x (a j))) =
+      AddMonoid.BigSum (\new Array E A.finCard (\lam j => y (a j))) =>
+        pmap AddMonoid.BigSum ArrayEquality
+      \func ArrayEquality  {a : Equiv {Fin A.finCard} {A}}: (\new Array E A.finCard (\lam j => x (a j))) =
+      (\new Array E A.finCard (\lam j => y (a j))) => arrayExt (\lam j => eq (a j))
     }
 
     \func FinSumRewrite (x : G -> Ab) (a : A) :
-      (Ab.FinSum x) a = B.FinSum (\lam e => (x e) a) => rewrite ((FinSumToBigSumAb x).2, (FinSumToBigSum (\lam e => (x e) a)).2, BigSumRewrite (FinSumToBigSumAb x).1) idp
+      (Ab.FinSum x) a = B.FinSum (\lam e => (x e) a) => \case Ab.FinSum_char x \with {
+      | inP a1 => \case B.FinSum_char2 (\lam e => (x e) a) a1.1 \with {
+        | p => rewrite (a1.2, p, BigSumRewrite) idp
+      }
+    }
     \where {
       \func Ab_Helper {f g : Ab}{x : A} : (f + g) x = (f x) + g x => idp
 
       \func ap_BigSum_el_wise (e : Array Ab)(a : A) : Array B => \lam i => (e i) a
 
-      \func ap_BigSum_el_wise_nil (a : A) : ap_BigSum_el_wise nil a = nil => idp
-
-      \func ap_BigSum_el_wise_cons {a : A} {ab : Ab} {l : Array Ab} : ap_BigSum_el_wise (ab :: l) a = (ab a) :: (ap_BigSum_el_wise l a) => idp
-
       \func BigSumRewrite (e : Array Ab)(a : A) : (Ab.BigSum e) a = B.BigSum (ap_BigSum_el_wise e a) \elim e
-        | nil => rewrite (ap_BigSum_el_wise_nil a) idp
-        | a1 :: l => rewrite (ap_BigSum_el_wise_cons, Ab_Helper, BigSumRewrite l a) idp
+        | nil => idp
+        | a1 :: l => rewrite (Ab_Helper, BigSumRewrite l a) idp
     }
 
     \lemma PermutationInvariance {E : AbMonoid}{A : FinSet}
@@ -109,7 +112,12 @@
 
       }
 
-    \func unfold_definition{G : FinGroup}{R : CRing}{A : LRepres R G}{B : SubLRepres A}
-                           {f : LinearMap A B}(q : \Pi(b : B) -> f (B.in b) = b)(b : B) : SumOverGroup f (B.in b) = AbMonoid.FinSum {B}
-        (\lam (g : G) => g B.ap f (inverse {G} g A.** B.in b)) => {?}
+    \func unfold_definition{G : FinGroup}{R : CRing}{A : LRepres R G}{B : SubLRepres A}{f : LinearMap A B}
+                           (q : \Pi(b : B) -> f (B.in b) = b)(b : B) :
+      SumOverGroup f (B.in b) = AbMonoid.FinSum {B} (\lam (g : G) => g B.ap f (inverse {G} g A.** B.in b))
+      => {?}
+      \where {
+      }
+
+
   }
