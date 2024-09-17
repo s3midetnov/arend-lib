@@ -2,6 +2,7 @@
 \import Algebra.Group.Representation.Category
 \import Algebra.Group.Representation.Representation
 \import Algebra.Group.Representation.Sub
+\import Algebra.Linear.Matrix
 \import Algebra.Module.Category
 \import Algebra.Module.LinearMap
 \import Algebra.Ring

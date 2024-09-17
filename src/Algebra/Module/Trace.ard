@@ -60,7 +60,7 @@
   \lemma BigSum-ext {n : Nat}{l l' : Array R n} (p : \Pi(i : Fin n) -> l i = l' i) : R.BigSum l = R.BigSum l' =>
     pmap R.BigSum (arrayExt p)
 
-  \lemma help : R.BigSum (\new Array R m (\lam (j : Fin m) =>
+  \protected \lemma help : R.BigSum (\new Array R m (\lam (j : Fin m) =>
   R.BigSum (\new Array R n (\lam (p0 : Fin n) => A p0 j R.* B j p0)))) =
   R.BigSum (\new Array R m (\lam (i : Fin m) => R.BigSum (\new Array R n (\lam (j : Fin n) => B i j R.* A j i))))
   => BigSum-ext {R}{m}
@@ -76,6 +76,7 @@
 
 \func Trace-conjugation {R : CRing}{n : Nat}{A B : Matrix R n n}{T : Monoid.Inv B} : Trace (T.inv product A product B) = Trace A
   => rewrite (Trace-prod (T.inv product A) B, inv $ product-assoc B T.inv A, T.inv-right, Ring.ide-left {MatrixRing R n}) idp
+
 
 \func Trace-diagonal {R : Ring} {l : Array R} : Trace (diagonal l) = R.BigSum l => unfold (rewrite diag-diagonal' idp)
 \where {
@@ -93,3 +94,7 @@
 
 \func Trace-ide {R : Ring}{n : Nat} : Trace (Ring.ide {MatrixRing R n}) = R.natCoef n =>
   rewrite (Trace-diagonal {R}{replicate n R.ide}, R.BigSum_replicate1) idp
+
+
+\func Trace-Basis-Independence{R : Ring}{U : LModule R} {v u : Array U}
+                              (p : U.IsBasis v)(q : U.IsBasis u)(T : LinearMap U U) : Trace (LinearMap.toMatrix v p T) = Trace (LinearMap.toMatrix u q T) => {?}

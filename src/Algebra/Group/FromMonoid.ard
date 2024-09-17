@@ -1,0 +1,34 @@
+\import Algebra.Group
+\import Algebra.Meta
+\import Algebra.Monoid
+\import Algebra.Monoid.Sub
+\import Logic
+\import Meta
+\import Paths.Meta
+
+
+\open Monoid
+\func SubGroupCoreOf (M : Monoid) : SubMonoid M \cowith
+  | contains g => Inv g
+  | contains_ide => \new Inv {
+    | inv => M.ide
+    | inv-left => M.ide-right
+    | inv-right => M.ide-right
+  }
+  | contains_* a b => \new Inv {
+      | inv => Inv.inv {b} * Inv.inv {a}
+      | inv-left => rewrite (aux, Inv.inv-left {a}, ide-right, Inv.inv-left {b}) idp
+      | inv-right => rewrite (aux, Inv.inv-right {b}, ide-right, Inv.inv-right {a}) idp
+    }
+  \where {
+    \protected \lemma aux {a b c d : M} : a * b * (c * d) = a * (b * c) * d => equation
+  }
+
+\func GroupCoreOf (M : Monoid) : Group {| Monoid => SubMonoid.struct {SubGroupCoreOf M}} \cowith
+  | inverse (m, p) => (Inv.inv {p}, \new Inv {
+    | inv => m
+    | inv-left => Inv.inv-right {p}
+    | inv-right => Inv.inv-left {p}
+  })
+  | inverse-left {(m, p)} => ext (rewrite (Inv.inv-left {p}) idp)
+  | inverse-right {(m, p)} => ext (rewrite (Inv.inv-right {p}) idp)

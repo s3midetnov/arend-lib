@@ -1,0 +1,41 @@
+\import Algebra.Field
+\import Algebra.Group
+\import Algebra.Linear.Matrix
+\import Algebra.Module
+\import Algebra.Monoid
+\import Algebra.Ring
+\import Function.Meta
+\import Meta
+\import Set
+\import Set.Fin
+
+\func AddToArray {E : AddMonoid}(v : Array E)(i j : Fin v.len) : Array E \cowith
+  | len => v.len
+  | at a => \case decideEq a j \with {
+    | yes e => v j + v i
+    | no n => v a
+  }
+
+\func MulArray {R : Ring}{E : LModule R}(v : Array E)(i : Fin v.len)(r : R) : Array E \cowith
+  | len => v.len
+  | at a => \case decideEq a i \with {
+    | yes e => r *c (v i)
+    | no n => v a
+  }
+
+-- IsIndependent (l : Array E) : \Prop
+--    => \Pi (c : Array R l.len) -> BigSum (\lam j => c j *c l j) = 0 -> \Pi (j : Fin l.len) -> c j = 0
+\func AddChangeBasis{R : Ring}{E : LModule R}{v : Array E}(v-bas : E.IsBasis v)(i j : Fin v.len)
+  : E.IsBasis (AddToArraycd v i j)
+  => (\lam c eq j => {?}, {?})
+  \where {
+  }
+
+\func MulInvChangeBasis{R : Ring}{E : LModule R}
+                       {v : Array E}(v-bas : E.IsBasis v)(i : Fin v.len)
+                       {r : R}(p : Monoid.Inv r) : E.IsBasis (MulArray v i r) => {?}
+
+\func FMulInvChangeBasis{R : Field}{E : LModule R}
+                        {v : Array E}(v-bas : E.IsBasis v)(i : Fin v.len)
+                        {r : R}(p : r AddGroup.`#0) : E.IsBasis (MulArray v i r) => {?}
+
